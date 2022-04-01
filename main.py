@@ -1,11 +1,15 @@
-from LoggingApiModule import LoggingApi
+from users.users_service import LoggingApi
 import sqlite3
 from sqlite3 import Error
 
 
 
+
+
 def run():
     if __name__ == '__main__': run()
+
+
 
 
 def begin():
@@ -31,17 +35,9 @@ def createNewLoggingApi():
     newapi = LoggingApi()
     return newapi
 
-def create_connection():
 
-    conn = None;
-    try:
-        conn = sqlite3.connect(':memory:')
-        print(sqlite3.version)
-    except Error as e:
-        print(e)
-    finally:
-        if conn:
-            conn.close()
+import os
 
-create_connection()
+print(os.getcwd())
+
 begin()
