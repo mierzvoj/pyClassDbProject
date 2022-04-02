@@ -1,15 +1,14 @@
+from os import getenv
+
+from database.users_model import User
 from users.users_service import LoggingApi
+from database.database import Database
 import sqlite3
 from sqlite3 import Error
 
 
-
-
-
 def run():
     if __name__ == '__main__': run()
-
-
 
 
 def begin():
@@ -36,8 +35,14 @@ def createNewLoggingApi():
     return newapi
 
 
-import os
+def createNewDatabase():
+    newdatabase = User(getenv('DB_NAME'))
+    return newdatabase
 
-print(os.getcwd())
+
+print(getenv("DB_NAME"))
+
+insert1 = Database()
+insert1.insert()
 
 begin()

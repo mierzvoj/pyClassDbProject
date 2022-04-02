@@ -1,12 +1,16 @@
-import sqlite3
-from os import getenv
-from dotenv import load_dotenv
-load_dotenv()
+from sqlalchemy.orm import sessionmaker
 
-class Database:
-    def __init__(self, database_name):
-        self.connection = sqlite3.connect(database_name)
-        self.cursor =self.connection.cursor()
+from database import users_model
 
-    def __del__(self):
-        self.connection.close()
+
+
+class Database():
+
+    def insert(self):
+        Session = sessionmaker(bind=users_model.engine)
+        session = Session()
+
+        us = users_model.User(1 , 'wojtek', 'login1234')
+        session.add(us)
+
+        session.commit()
