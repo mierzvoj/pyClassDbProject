@@ -1,11 +1,10 @@
 from os import getenv
 
-<<<<<<< HEAD
+
 from sqlalchemy.orm import sessionmaker
 
 from database import users_model
-=======
->>>>>>> 57b3294c581940392bf289083539175930e2fbcb
+
 from database.users_model import User
 from users.users_service import LoggingApi
 from database.database import Database
@@ -29,7 +28,7 @@ def begin():
             if option == 1:
                 newapi.login()
             else:
-                newapi.register()
+                newapi.createNewUser()
             newapi.options()
         except:
             print("Zacznij od nowa")
@@ -48,23 +47,7 @@ def createNewDatabase():
 
 print(getenv("DB_NAME"))
 
-insert1 = Database()
-insert1.insert()
-<<<<<<< HEAD
-
-Session = sessionmaker(bind=users_model.engine)
-session = Session()
-
-us = users_model.User(1, 'wojtek3', 'login1234')
-session.add(us)
-
-session.commit()
 
 
-
-u = User('1000', 'wojtek2', 'blabla')
-insert1.add(u)
-=======
->>>>>>> 57b3294c581940392bf289083539175930e2fbcb
 
 begin()

@@ -25,12 +25,10 @@ base = declarative_base()
 class User(base):
     __tablename__ = 'users'
 
-    users_id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, primary_key=True)
     password = Column(String)
 
-    def __init__(self, users_id, name, password):
-        self.users_id = users_id
+    def __init__(self, name, password):
         self.name = name
         self.password = password
 

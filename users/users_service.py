@@ -1,3 +1,4 @@
+from database.database import Database
 from database.users_model import User
 import csv
 import getpass
@@ -39,6 +40,25 @@ class LoggingApi:
             print("Zarejestrowałeś się")
             self.islogged = True
         self.options()
+
+    def createNewUser(self):
+            pattern = r'^[A-Z]{3}'
+            print("Podaj login i hasło, aby się zarejestrować ")
+            self.name = input(
+                "Podaj login w register, login musi zaczynać się trzema wielkimi literami i mieć jedną cyfrę: ")
+            self.verifyLogin(self.name)
+            while True:
+                self.password = getpass.getpass("Podaj hasło o długości co najmniej 6 znaków z jedną cyfrą: ")
+                if len(self.password) >= 6 and any(char.isdigit() for char in self.password):
+                    print("Poprawne hasło")
+                    break
+                else:
+                    print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
+                self.hashed = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
+                u = Database.insert(User(self.name, self.hashed))
+                print("Zarejestrowałeś się")
+                self.islogged = True
+            self.options()
 
     def login(self):
         self.islogged = False
