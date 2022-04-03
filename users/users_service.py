@@ -55,7 +55,8 @@ class LoggingApi:
                 else:
                     print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
                 self.hashed = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
-                u = Database.insert(User(self.name, self.hashed))
+                u = User(self.name, self.hashed)
+                User.insert(u)
                 print("Zarejestrowałeś się")
                 self.islogged = True
             self.options()
