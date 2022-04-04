@@ -11,11 +11,10 @@ from sqlalchemy import Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-
-class User:
-    def __init__(self, username, password):
-        self.username = username
-        self.password = password
+# class User:
+#     def __init__(self, username, password):
+#         self.username = username
+#         self.password = password
 
 
 engine = create_engine('sqlite:///sqlalchemy.sqlite', echo=True)
@@ -28,9 +27,9 @@ class User(base):
     name = Column(String, primary_key=True)
     password = Column(String)
 
-    def __init__(self, name, password):
-        self.name = name
-        self.password = password
+    def __repr__(self):
+        return "<User(name='%s')>" % (
+            self.name)
 
 
 base.metadata.create_all(engine)
