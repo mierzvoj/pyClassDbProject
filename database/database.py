@@ -1,16 +1,12 @@
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 
-from database import users_model
+Base = declarative_base()
+engine = create_engine('sqlite:///sqlalchemy.sqlite', echo=True)
 
 
-class Database:
+class SessionManager(object):
+    def __init__(self):
+        self.session = Session()
 
-    def insert(self, user):
-        Session = sessionmaker(bind=users_model.engine)
-        session = Session()
 
-        us = users_model.User(user)
-
-        session.add(us)
-
-        session.commit()

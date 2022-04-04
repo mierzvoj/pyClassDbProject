@@ -1,12 +1,19 @@
-from database.database import Database
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from database import users_model
+from database.database import SessionManager
 from database.users_model import User
 import csv
 import getpass
 import bcrypt
 
 
-class LoggingApi:
-    user = User
+
+
+class UserManager(SessionManager):
+    Base = declarative_base()
+    engine = create_engine('sqlite:///sqlalchemy.sqlite', echo=True)
+
 
     def __init__(self):
         self.name = None
@@ -14,53 +21,43 @@ class LoggingApi:
         self.islogged = None
         self.hashed = None
         self.path = None
+        self.new_user = None
 
+    # def insert(self):
+    #     print("insert only")
+    #     Session = sessionmaker(bind=UserManager.engine)
+    #     session = Session()
+    #     new_user = users_model.User("john12", "blabla")
+    #     session.add(new_user)
+    #     session.commit()
 
-
-
-
-
-    # def register(self):
-    #     pattern = r'^[A-Z]{3}'
-    #     print("Podaj login i hasło, aby się zarejestrować ")
-    #     self.name = input("Podaj login w register, login musi zaczynać się trzema wielkimi literami i mieć jedną cyfrę: ")
-    #     self.verifyLogin(self.name)
-    #     while True:
-    #         self.password = getpass.getpass("Podaj hasło o długości co najmniej 6 znaków z jedną cyfrą: ")
-    #         if len(self.password) >= 6 and any(char.isdigit() for char in self.password):
-    #             print("Poprawne hasło")
-    #             break
-    #         else:
-    #             print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
-    #     with open('users.csv', 'a', newline='') as csvfile:
-    #         self.hashed = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
-    #         csv_writer = csv.writer(csvfile)
-    #         csv_writer.writerow([self.name, self.hashed])
-    #         csvfile.close()
-    #         print("Zarejestrowałeś się")
-    #         self.islogged = True
-    #     self.options()
 
     def createNewUser(self):
-            print("tu createNewUser")
-            pattern = r'^[A-Z]{3}'
-            print("Podaj login i hasło, aby się zarejestrować ")
-            self.name = input(
-                "Podaj login w register, login musi zaczynać się trzema wielkimi literami i mieć jedną cyfrę: ")
-            self.verifyLogin(self.name)
-            while True:
-                self.password = getpass.getpass("Podaj hasło o długości co najmniej 6 znaków z jedną cyfrą: ")
-                if len(self.password) >= 6 and any(char.isdigit() for char in self.password):
-                    print("Poprawne hasło")
-                    break
-                else:
-                    print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
-                self.hashed = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
-                u = User(self.name, self.hashed)
-                User.insert(u)
-                print("Zarejestrowałeś się")
-                self.islogged = True
-            self.options()
+        print("tu createNewUser")
+        pattern = r'^[A-Z]{3}'
+        print("Podaj login i hasło, aby się zarejestrować ")
+        self.name = input(
+            "Podaj login w register, login musi zaczynać się trzema wielkimi literami i mieć jedną cyfrę: ")
+        self.verifyLogin(self.name)
+        while True:
+            self.password = getpass.getpass("Podaj hasło o długości co najmniej 6 znaków z jedną cyfrą: ")
+            if len(self.password) >= 6 and any(char.isdigit() for char in self.password):
+                print("Poprawne hasło")
+                break
+            else:
+                print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
+        print("continue my code")
+        self.hashed = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
+        new_user = User(self.name, self.hashed)
+        print(repr(new_user))
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
+        session.add(new_user)
+        session.commit()
+        print("Zarejestrowałeś się")
+        self.islogged = True
+        self.options()
+        print("commit unsuccesfull")
 
     def login(self):
         self.islogged = False
@@ -100,27 +97,6 @@ class LoggingApi:
                         self.register()
                 break
 
-    def deleteEntry(self):
-        lines = list()
-        name = input("Podaj login do usunięcia: ")
-        with open('users.csv', 'r+', newline='') as in_file:
-            # rows = [row for row in csv.reader(in_file) if member_name not in row]
-            # in_file.seek(0)
-            # writer = csv.writer(in_file)
-            # writer.writerows(rows)
-            reader = csv.reader(in_file)
-            for row in reader:
-                lines.append(row)
-                for field in row:
-                    if field == name:
-                        lines.remove(row)
-        with open('users.csv', 'w', newline='') as writeFile:
-            writer = csv.writer(writeFile)
-            writer.writerows(lines)
-
-
-
-
 
 
     def options(self):
@@ -138,20 +114,4 @@ class LoggingApi:
             else:
                 exit()
 
-    def displayUsers(self):
-        data = []
-        with open("users.csv") as csvfile:
-            reader = csv.reader(csvfile)
-            for row in reader:
-                data.append(row)
-        print(data)
 
-    def searchByLogin(self):
-        login = str(input("Podaj login do wyszukania: \n"))
-        csv_file = csv.reader(open("users.csv", "r"))
-        for row in csv_file:
-            if login == row[0]:
-                print(row)
-                break
-            else:
-                print("---------nie znaleziono----------")

@@ -1,13 +1,12 @@
 from os import getenv
-
+from database.users_model import User
 
 from sqlalchemy.orm import sessionmaker
 
 from database import users_model
 
 from database.users_model import User
-from users.users_service import LoggingApi
-from database.database import Database
+from users.users_service import UserManager
 import sqlite3
 from sqlite3 import Error
 
@@ -16,8 +15,9 @@ def run():
     if __name__ == '__main__': run()
 
 
+
 def begin():
-    newapi = createNewLoggingApi()
+    new_session = createNewUserService()
 
     print("Witaj")
     while True:
@@ -26,18 +26,18 @@ def begin():
             if option in ['1', '2']:
                 break
             if option == 1:
-                newapi.login()
+                new_session.login()
             else:
-                newapi.createNewUser()
-            newapi.options()
+                new_session.createNewUser()
+            new_session.options()
         except:
             print("Zacznij od nowa")
             break
 
 
-def createNewLoggingApi():
-    newapi = LoggingApi()
-    return newapi
+def createNewUserService():
+    user_manager = UserManager()
+    return user_manager
 
 
 def createNewDatabase():
@@ -46,7 +46,6 @@ def createNewDatabase():
 
 
 print(getenv("DB_NAME"))
-
 
 
 
