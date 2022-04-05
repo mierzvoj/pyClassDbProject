@@ -1,7 +1,10 @@
+import sqlite3
+
+import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from database import users_model
-from database.database import SessionManager
+from database.database import SessionManager, engine
 from database.users_model import User
 import csv
 import getpass
@@ -21,6 +24,7 @@ class UserManager(SessionManager):
         self.new_user = None
         self.bytespass = None
         self.user_passwd = None
+        self.input_name = None
 
     def createNewUser(self):
         print("tu createNewUser")
@@ -72,7 +76,9 @@ class UserManager(SessionManager):
                 print('Spróbuj się zarejestrować')
                 self.createNewUser()
         print("tu options")
+        session.close()
         self.options()
+
 
     def verifyLogin(self, name):
         if not any(char.isdigit() for char in name):
@@ -88,6 +94,24 @@ class UserManager(SessionManager):
                         print("Zarejestruj się jako nowy użytkownik o innym loginie")
                         self.createNewUser()
                 break
+        session.close()
+
+    def showAllUsers(self):
+        q = "SELECT name from users"
+        my_cursor = engine.execute(q)
+        for row in my_cursor:
+            print("użytkownik systemu: " + row[0])
+
+
+    def findUserByName(self):
+        self.input_name = input('Podaj nazwę do wyszukania: ')
+        q = 'SELECT * FROM users WHERE name=input_name'
+        my_cursor = engine.execute(q)
+        for row in my_cursor:
+            print("użytkownik systemu: " + row[0])
+
+    def deleteEntry(self):
+        pass
 
     def options(self):
         while self.islogged:
@@ -95,9 +119,9 @@ class UserManager(SessionManager):
             print("Wybierz opcję menu lista: 1/szukaj: 2/usun: 3/zakoncz: 4\n")
             menu = int(input("podaj wybór: "))
             if menu == 1:
-                print("display all users")
+                self.showAllUsers()
             elif menu == 2:
-                print("search")
+                self.findUserByName()
             elif menu == 3:
                 print("Wybrany użytkownik został usunięty z rejestru, tej operacji nie można odwrócić")
             else:
