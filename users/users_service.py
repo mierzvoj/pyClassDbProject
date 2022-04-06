@@ -54,22 +54,19 @@ class UserManager(SessionManager):
         print("commit unsuccesfull")
 
     def login(self):
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
         while not self.islogged:
             self.name = input('Podaj swój login: ')
             self.password = getpass.getpass("Podaj swoje hasło: ")
-            self.bytespass = b"self.password"
-            self.hashed = bcrypt.hashpw(self.bytespass, bcrypt.gensalt())
-            Session = sessionmaker(bind=UserManager.engine)
-            session = Session()
+            self.bytespass = self.password.encode('utf-8')
             user = session.query(session.query(User).filter_by(name=self.name).exists()).scalar()
             user_passwd = session.query(User.password).filter(User.name == self.name).one_or_none()
             result = user_passwd[0]
-            print(user)
-            print(result)
-            print(self.hashed)
-            if user and bcrypt.hashpw(self.bytespass, result):
+            if user and bcrypt.checkpw(self.bytespass, result):
                 print("Zalogowałeś się ")
                 self.islogged = True
+                break
                 # session['logged_in'] = True
             else:
                 print('Nieprawidłowy login lub hasło')
@@ -105,10 +102,10 @@ class UserManager(SessionManager):
 
     def findUserByName(self):
         self.input_name = input('Podaj nazwę do wyszukania: ')
-        q = 'SELECT * FROM users WHERE name=input_name'
-        my_cursor = engine.execute(q)
-        for row in my_cursor:
-            print("użytkownik systemu: " + row[0])
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
+        q = session.query(User.name).filter_by(name=self.input_name)
+        print(q)
 
     def deleteEntry(self):
         pass
