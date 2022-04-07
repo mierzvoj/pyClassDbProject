@@ -1,5 +1,4 @@
 import sqlite3
-
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -9,11 +8,14 @@ from database.users_model import User
 import csv
 import getpass
 import bcrypt
+import os
+
 
 
 class UserManager(SessionManager):
     Base = declarative_base()
     engine = create_engine('sqlite:///sqlalchemy.sqlite', echo=True)
+
 
     def __init__(self):
         self.name = None
@@ -25,6 +27,14 @@ class UserManager(SessionManager):
         self.bytespass = None
         self.user_passwd = None
         self.input_name = None
+        self.room_id = None
+        self.isroomcreated = None
+        self.current_path = None
+        self.hashed_room_id = None
+        self.room_name = None
+
+    current_path = os.getcwd()
+    timings_csv_file = current_path + '\\rooms.csv'
 
     def createNewUser(self):
         print("tu createNewUser")
@@ -94,32 +104,91 @@ class UserManager(SessionManager):
         session.close()
 
     def showAllUsers(self):
-        q = "SELECT name from users"
-        my_cursor = engine.execute(q)
+        query = "SELECT name from users"
+        my_cursor = engine.execute(query)
         for row in my_cursor:
             print("użytkownik systemu: " + row[0])
 
 
     def findUserByName(self):
-        self.input_name = input('Podaj nazwę do wyszukania: ')
+        self.input_name = input('Podaj nazwę użytkownika do wyszukania: ')
         Session = sessionmaker(bind=UserManager.engine)
         session = Session()
-        q = session.query(User.name).filter_by(name=self.input_name)
-        print(q)
+        user = session.query(session.query(User).filter_by(name=self.input_name).exists()).scalar()
+        q = session.query(User.name).filter(User.name == self.input_name).one_or_none()
+        if user:
+            result = q[0]
+            print("Znaleziono rekord: " + result)
+        else:
+            print("Nie znaleziono takiego użytkownika")
+
 
     def deleteEntry(self):
-        pass
+        self.input_name = input('Podaj nazwę użytkownika do usuniecia: ')
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
+        user = session.query(session.query(User).filter_by(name=self.input_name).exists()).scalar()
+        q = session.query(User.name).filter(User.name == self.input_name).one_or_none()
+        if user:
+            session.query(User).filter(User.name == self.input_name).delete()
+            session.commit()
+            print("Rekord został usunięty")
+        else:
+            print("Nie znaleziono takiego użytkownika")
 
     def options(self):
         while self.islogged:
             print("Witamy w programie logowania\n")
-            print("Wybierz opcję menu lista: 1/szukaj: 2/usun: 3/zakoncz: 4\n")
+            print("Wybierz opcję menu lista: 1/szukaj: 2/usun: 3/utwórz pokój: 4/zakoncz: 5\n")
             menu = int(input("podaj wybór: "))
             if menu == 1:
                 self.showAllUsers()
             elif menu == 2:
                 self.findUserByName()
             elif menu == 3:
-                print("Wybrany użytkownik został usunięty z rejestru, tej operacji nie można odwrócić")
+                self.deleteEntry()
+            elif menu == 4:
+                self.createNewRoom()
             else:
                 exit()
+
+    def createNewRoom(self):
+        self.islogged = True
+        self.room_id = input("Id pokoju powinno mieć cztery cyfry: ")
+        self.verifyRoomId(self.room_id)
+        while True:
+            room_password = getpass.getpass("Podaj hasło z cyfr o długości co najmniej 4 znaków: ")
+            if len(room_password) >= 4 and room_password.isdigit():
+                print("Poprawne hasło")
+                break
+            else:
+                print("Hasło musi mieć co najmniej 4 cyfry")
+        while True:
+            self.room_name = input("Podaj nazwę pokoju: ")
+            if len(self.room_name) > 0:
+                print("Poprawna nazwa pokoju")
+                break
+            else:
+                print("Podaj nazwę pokoju")
+        with open(self.timings_csv_file, 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            self.hashed_room_id = bcrypt.hashpw(room_password.encode('utf8'), bcrypt.gensalt())
+            csv_writer.writerow([self.room_id, self.hashed_room_id, self.room_name, self.name])
+            csvfile.close()
+            print("Zarejestrowałeś nowy pokój")
+            self.isroomcreated = True
+        self.options()
+
+    def verifyRoomId(self, room_id):
+        csv_file = csv.reader(open(self.timings_csv_file, "r"))
+        print(room_id)
+        while True:
+            for row in csv_file:
+                if self.room_id == row[0]:
+                    print("Pokój o takim id już istnieje")
+                    print("Zarejestruj nowy pokój")
+                    self.createNewRoom()
+                break
+            else:
+                print("Id pokoju ok")
+            break
