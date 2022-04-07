@@ -1,6 +1,8 @@
 import sqlite3
+
+import meta as meta
 import sqlalchemy
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, update, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
 from database import users_model
 from database.database import SessionManager, engine
@@ -109,6 +111,12 @@ class UserManager(SessionManager):
         for row in my_cursor:
             print("użytkownik systemu: " + row[0])
 
+    def showAllUserRooms(self):
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
+        rooms = session.query(User.room)
+        result = rooms[0]
+        print(result)
 
     def findUserByName(self):
         self.input_name = input('Podaj nazwę użytkownika do wyszukania: ')
@@ -121,7 +129,7 @@ class UserManager(SessionManager):
             print("Znaleziono rekord: " + result)
         else:
             print("Nie znaleziono takiego użytkownika")
-
+        session.close()
 
     def deleteEntry(self):
         self.input_name = input('Podaj nazwę użytkownika do usuniecia: ')
@@ -132,6 +140,7 @@ class UserManager(SessionManager):
         if user:
             session.query(User).filter(User.name == self.input_name).delete()
             session.commit()
+            session.close()
             print("Rekord został usunięty")
         else:
             print("Nie znaleziono takiego użytkownika")
@@ -139,7 +148,7 @@ class UserManager(SessionManager):
     def options(self):
         while self.islogged:
             print("Witamy w programie logowania\n")
-            print("Wybierz opcję menu lista: 1/szukaj: 2/usun: 3/utwórz pokój: 4/zakoncz: 5\n")
+            print("Wybierz opcję menu lista: 1/szukaj: 2/usun: 3/utwórz pokój: 4/pokaż pokoje: 5/dodaj usera do pokoju: 6/zakoncz: 7\n")
             menu = int(input("podaj wybór: "))
             if menu == 1:
                 self.showAllUsers()
@@ -149,6 +158,10 @@ class UserManager(SessionManager):
                 self.deleteEntry()
             elif menu == 4:
                 self.createNewRoom()
+            elif menu == 5:
+                self.showAllUserRooms()
+            elif menu == 6:
+                self.addUserToRoom()
             else:
                 exit()
 
@@ -192,3 +205,23 @@ class UserManager(SessionManager):
             else:
                 print("Id pokoju ok")
             break
+
+    def addUserToRoom(self):
+        meta = MetaData(bind=engine)
+        MetaData.reflect(meta)
+        usertobeadded = input("Podaj name usera do dodania: ")
+        roomtobeused = input("Podaj id pokoju do dodania użytkownika: ")
+        roompasswd = input("Podaj hasło do pokoju: ")
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
+        user = session.query(session.query(User).filter_by(name=usertobeadded).exists()).scalar()
+        q = session.query(User.name).filter(User.name == usertobeadded).one_or_none()
+        if user:
+            result = q[0]
+            print(result)
+            USERS = meta.tables['users']
+            stmt = USERS.update().where(USERS.c.name == usertobeadded).values(room=roomtobeused)
+            engine.execute(stmt)
+            print("User dodany do pokoju")
+        else:
+            print("nie znaleziono pokoju lub użytkownika")
