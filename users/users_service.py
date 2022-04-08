@@ -262,9 +262,11 @@ class UserManager(SessionManager):
                 for row in reader:
                     userdata.append(row)
             name = input('Podaj swój login: ')
-            password = getpass.getpass('Podaj swoje hasło ')
+            password = getpass.getpass('Podaj hasło do pokoju ')
+            passwordencoded = password.encode('utf-8')
             col3 = [x[3] for x in userdata]
             col1 = [x[1] for x in userdata]
+            print(userdata)
             if name in col3:
                 for k in range(0, len(col1)):
                     if col3[k] == name and col1[k] == password:
