@@ -34,6 +34,10 @@ class UserManager(SessionManager):
         self.current_path = None
         self.hashed_room_id = None
         self.room_name = None
+        self.roompasswd = None
+        self.isloggedtoroom = None
+        self.room = None
+
 
     current_path = os.getcwd()
     timings_csv_file = current_path + '\\rooms.csv'
@@ -54,7 +58,7 @@ class UserManager(SessionManager):
                 print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
         print("continue my code")
         self.hashed = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
-        new_user = User(self.name, self.hashed)
+        new_user = User(self.name, self.hashed, self.room)
         print(repr(new_user))
         Session = sessionmaker(bind=UserManager.engine)
         session = Session()
@@ -215,7 +219,8 @@ class UserManager(SessionManager):
         MetaData.reflect(meta)
         usertobeadded = input("Podaj name usera do dodania: ")
         roomtobeused = input("Podaj id pokoju do dodania użytkownika: ")
-        roompasswd = input("Podaj hasło do pokoju: ")
+        # self.roompasswd = input("Podaj hasło do pokoju: ")
+        self.passwordValidate()
         Session = sessionmaker(bind=UserManager.engine)
         session = Session()
         user = session.query(session.query(User).filter_by(name=usertobeadded).exists()).scalar()
@@ -231,4 +236,40 @@ class UserManager(SessionManager):
             print("nie znaleziono pokoju lub użytkownika")
 
     def removeUsersFromRoom(self):
-        pass
+        meta = MetaData(bind=engine)
+        MetaData.reflect(meta)
+        roomtobelcleared = input("Podaj id pokoju do usunięcia użytkowników: ")
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
+        user = session.query(session.query(User).filter_by(room=roomtobelcleared).exists()).scalar()
+        q = session.query(User.room).filter(User.room == roomtobelcleared).one_or_none()
+        if user:
+            USERS = meta.tables['users']
+            # stmt = (update(USERS).where(USERS.c.room == roomtobelcleared).values(room=None))
+            u = update(USERS)
+            u = u.values({"room": None})
+            u = u.where(USERS.c.room == roomtobelcleared)
+            engine.execute(u)
+            print("User usunięty z pokoju")
+        else:
+            print("nie znaleziono pokoju lub użytkownika")
+
+    def passwordValidate(self):
+        while not self.isloggedtoroom:
+            userdata = []
+            with open(self.timings_csv_file, 'r') as csvfile:
+                reader = csv.reader(csvfile)
+                for row in reader:
+                    userdata.append(row)
+            name = input('Podaj swój login: ')
+            password = getpass.getpass('Podaj swoje hasło ')
+            col3 = [x[3] for x in userdata]
+            col1 = [x[1] for x in userdata]
+            if name in col3:
+                for k in range(0, len(col1)):
+                    if col3[k] == name and col1[k] == password:
+                        print("Zalogowałeś się ")
+                        self.isloggedtoroom = True
+                        break
+                    else:
+                        print("nieudane dodanie usera do pokoju")
