@@ -18,10 +18,11 @@ class UserManager(SessionManager):
     engine = create_engine('sqlite:///sqlalchemy.sqlite', echo=True)
 
     def __init__(self):
+        self.searchresult = None
         self.name = None
         self.password = None
         self.islogged = False
-        self.hashed = None
+        self.hasheduserpasswd = None
         self.path = None
         self.new_user = None
         self.bytespass = None
@@ -37,34 +38,36 @@ class UserManager(SessionManager):
         self.room = None
 
     current_path = os.getcwd()
-    timings_csv_file = current_path + '\\rooms.csv'
+    current_csv_file = current_path + '\\rooms.csv'
 
     def createNewUser(self):
-        print("tu createNewUser")
-        pattern = r'^[A-Z]{3}'
         print("Podaj login i hasło, aby się zarejestrować ")
         self.name = input(
-            "Podaj login w register, login musi zaczynać się trzema wielkimi literami i mieć jedną cyfrę: ")
-        self.verifyLogin(self.name)
-        while True:
-            self.password = getpass.getpass("Podaj hasło o długości co najmniej 6 znaków z jedną cyfrą: ")
-            if len(self.password) >= 6 and any(char.isdigit() for char in self.password):
-                print("Poprawne hasło")
-                break
+            "Podaj login w register, login musi mieć jedną cyfrę: ")
+        if self.verifyUserLogin(self.name):
+            if any(char.isdigit() for char in self.name):
+                while True:
+                    self.password = getpass.getpass("Podaj hasło o długości co najmniej 6 znaków z jedną cyfrą: ")
+                    if len(self.password) >= 6 and any(char.isdigit() for char in self.password):
+                        print("Poprawne hasło")
+                        break
+                    else:
+                        print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
+                self.hasheduserpasswd = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
+                new_user = User(self.name, self.hasheduserpasswd, self.room)
+                print(repr(new_user))
+                Session = sessionmaker(bind=UserManager.engine)
+                session = Session()
+                session.add(new_user)
+                session.commit()
+                print("Zarejestrowałeś się")
+                self.islogged = True
+                self.options()
+                print("commit unsuccesfull")
             else:
-                print("hasło musi mieć co najmniej 6 znaków i jedną cyfrę")
-        print("continue my code")
-        self.hashed = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
-        new_user = User(self.name, self.hashed, self.room)
-        print(repr(new_user))
-        Session = sessionmaker(bind=UserManager.engine)
-        session = Session()
-        session.add(new_user)
-        session.commit()
-        print("Zarejestrowałeś się")
-        self.islogged = True
-        self.options()
-        print("commit unsuccesfull")
+                print('Podaj chociaż jedną cyfrę w loginie użytkownika')
+        else:
+            print("Użytkownik o takim loginie istnieje, podaj inny login")
 
     def login(self):
         Session = sessionmaker(bind=UserManager.engine)
@@ -75,12 +78,11 @@ class UserManager(SessionManager):
             self.bytespass = self.password.encode('utf-8')
             user = session.query(session.query(User).filter_by(name=self.name).exists()).scalar()
             user_passwd = session.query(User.password).filter(User.name == self.name).one_or_none()
-            result = user_passwd[0]
-            if user and bcrypt.checkpw(self.bytespass, result):
+            self.searchresult = user_passwd[0]
+            if user and bcrypt.checkpw(self.bytespass, self.searchresult):
                 print("Zalogowałeś się ")
                 self.islogged = True
                 break
-                # session['logged_in'] = True
             else:
                 print('Nieprawidłowy login lub hasło')
                 print('Spróbuj się zarejestrować')
@@ -88,22 +90,6 @@ class UserManager(SessionManager):
         print("tu options")
         session.close()
         self.options()
-
-    def verifyLogin(self, name):
-        if not any(char.isdigit() for char in name):
-            print('Podaj choć jedną cyfrę w loginie użytkownika')
-            self.createNewUser()
-        else:
-            while True:
-                Session = sessionmaker(bind=UserManager.engine)
-                session = Session()
-                user = session.query(session.query(User).filter_by(name=self.name).exists()).scalar()
-                if user:
-                    print("Użytkownik o takim loginie już istnieje")
-                    print("Zarejestruj się jako nowy użytkownik o innym loginie")
-                    self.createNewUser()
-                break
-        session.close()
 
     def showAllUsers(self):
         query = "SELECT name from users"
@@ -150,51 +136,38 @@ class UserManager(SessionManager):
     def createNewRoom(self):
         self.islogged = True
         self.room_id = input("Id pokoju powinno mieć cztery cyfry: ")
-        self.verifyRoomId(self.room_id)
-        while True:
-            room_password = getpass.getpass("Podaj hasło z cyfr o długości co najmniej 4 znaków: ")
-            if len(room_password) >= 4 and room_password.isdigit():
-                print("Poprawne hasło")
-                break
-            else:
-                print("Hasło musi mieć co najmniej 4 cyfry")
-        while True:
-            self.room_name = input("Podaj nazwę pokoju: ")
-            if len(self.room_name) > 0:
-                print("Poprawna nazwa pokoju")
-                break
-            else:
-                print("Podaj nazwę pokoju")
-        with open(self.timings_csv_file, 'a', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            self.hashed_room_passwd = bcrypt.hashpw(room_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            csv_writer.writerow([self.room_id, self.hashed_room_passwd, self.room_name, self.name])
-            csvfile.close()
-            print("Zarejestrowałeś nowy pokój")
-            self.isroomcreated = True
-        self.options()
-
-    def verifyRoomId(self, room_id):
-        csv_file = csv.reader(open(self.timings_csv_file, "r"))
-        print(room_id)
-        while True:
-            for row in csv_file:
-                if self.room_id == row[0]:
-                    print("Pokój o takim id już istnieje")
-                    print("Zarejestruj nowy pokój")
-                    self.createNewRoom()
-                break
-            else:
-                print("Id pokoju ok")
-            break
+        if self.verifyRoomId(self.room_id):
+            while True:
+                room_password = getpass.getpass("Podaj hasło z cyfr o długości co najmniej 4 znaków: ")
+                if len(room_password) >= 4 and room_password.isdigit():
+                    print("Poprawne hasło")
+                    break
+                else:
+                    print("Hasło musi mieć co najmniej 4 cyfry")
+            while True:
+                self.room_name = input("Podaj nazwę pokoju: ")
+                if len(self.room_name) > 0:
+                    print("Poprawna nazwa pokoju")
+                    break
+                else:
+                    print("Podaj nazwę pokoju")
+            with open(self.current_csv_file, 'a', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                self.hashed_room_passwd = bcrypt.hashpw(room_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                csv_writer.writerow([self.room_id, self.hashed_room_passwd, self.room_name, self.name])
+                csvfile.close()
+                print("Zarejestrowałeś nowy pokój")
+                self.isroomcreated = True
+        else:
+            print("Podaj inny id pokoju, bo ten jest już zajęty")
+            self.options()
 
     def addUserToRoom(self):
         meta = MetaData(bind=engine)
         MetaData.reflect(meta)
         usertobeadded = input("Podaj name usera do dodania: ")
         roomtobeused = input("Podaj id pokoju do dodania użytkownika: ")
-        # self.roompasswd = input("Podaj hasło do pokoju: ")
-        self.passwordValidate()
+        self.roomPasswordValidate()
         Session = sessionmaker(bind=UserManager.engine)
         session = Session()
         user = session.query(session.query(User).filter_by(name=usertobeadded).exists()).scalar()
@@ -228,10 +201,34 @@ class UserManager(SessionManager):
         else:
             print("nie znaleziono pokoju lub użytkownika")
 
-    def passwordValidate(self):
+    def verifyUserLogin(self, name):
+        Session = sessionmaker(bind=UserManager.engine)
+        session = Session()
+        user = session.query(session.query(User).filter_by(name=self.name).exists()).scalar()
+        session.close()
+        if user:
+            print("Użytkownik o takim loginie już istnieje")
+            print("Zarejestruj się jako nowy użytkownik o innym loginie")
+        else:
+            return True
+
+    def verifyRoomId(self, room_id):
+        roomdata = []
+        csv_file = csv.reader(open(self.current_csv_file, "r"))
+        print(room_id)
+        for row in csv_file:
+            roomdata.append(row)
+            col0 = [x[0] for x in roomdata]
+        if self.room_id in col0:
+               return False
+        else:
+                print("Id pokoju ok")
+        return True
+
+    def roomPasswordValidate(self):
         while not self.isloggedtoroom:
             userdata = []
-            with open(self.timings_csv_file, 'r') as csvfile:
+            with open(self.current_csv_file, 'r') as csvfile:
                 reader = csv.reader(csvfile)
                 for row in reader:
                     userdata.append(row)
