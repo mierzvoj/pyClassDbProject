@@ -1,6 +1,6 @@
 import sqlite3
 
-import meta as meta
+# import meta as meta
 import sqlalchemy
 from sqlalchemy import create_engine, update, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -13,11 +13,9 @@ import bcrypt
 import os
 
 
-
 class UserManager(SessionManager):
     Base = declarative_base()
     engine = create_engine('sqlite:///sqlalchemy.sqlite', echo=True)
-
 
     def __init__(self):
         self.name = None
@@ -32,12 +30,11 @@ class UserManager(SessionManager):
         self.room_id = None
         self.isroomcreated = None
         self.current_path = None
-        self.hashed_room_id = None
+        self.hashed_room_passwd = None
         self.room_name = None
         self.roompasswd = None
         self.isloggedtoroom = None
         self.room = None
-
 
     current_path = os.getcwd()
     timings_csv_file = current_path + '\\rooms.csv'
@@ -92,7 +89,6 @@ class UserManager(SessionManager):
         session.close()
         self.options()
 
-
     def verifyLogin(self, name):
         if not any(char.isdigit() for char in name):
             print('Podaj choć jedną cyfrę w loginie użytkownika')
@@ -103,9 +99,9 @@ class UserManager(SessionManager):
                 session = Session()
                 user = session.query(session.query(User).filter_by(name=self.name).exists()).scalar()
                 if user:
-                        print("Użytkownik o takim loginie już istnieje")
-                        print("Zarejestruj się jako nowy użytkownik o innym loginie")
-                        self.createNewUser()
+                    print("Użytkownik o takim loginie już istnieje")
+                    print("Zarejestruj się jako nowy użytkownik o innym loginie")
+                    self.createNewUser()
                 break
         session.close()
 
@@ -151,28 +147,6 @@ class UserManager(SessionManager):
         else:
             print("Nie znaleziono takiego użytkownika")
 
-    def options(self):
-        while self.islogged:
-            print("Witamy w programie logowania\n")
-            print("Wybierz opcję menu lista: 1/szukaj: 2/usun: 3/utwórz pokój: 4/pokaż pokoje: 5/dodaj usera do pokoju: 6/usuń userów z pokoju: 7 /zakoncz: 8\n")
-            menu = int(input("podaj wybór: "))
-            if menu == 1:
-                self.showAllUsers()
-            elif menu == 2:
-                self.findUserByName()
-            elif menu == 3:
-                self.deleteEntry()
-            elif menu == 4:
-                self.createNewRoom()
-            elif menu == 5:
-                self.showAllUserRooms()
-            elif menu == 6:
-                self.addUserToRoom()
-            elif menu == 7:
-                self.removeUsersFromRoom()
-            else:
-                exit()
-
     def createNewRoom(self):
         self.islogged = True
         self.room_id = input("Id pokoju powinno mieć cztery cyfry: ")
@@ -193,8 +167,8 @@ class UserManager(SessionManager):
                 print("Podaj nazwę pokoju")
         with open(self.timings_csv_file, 'a', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
-            self.hashed_room_id = bcrypt.hashpw(room_password.encode('utf8'), bcrypt.gensalt())
-            csv_writer.writerow([self.room_id, self.hashed_room_id, self.room_name, self.name])
+            self.hashed_room_passwd = bcrypt.hashpw(room_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            csv_writer.writerow([self.room_id, self.hashed_room_passwd, self.room_name, self.name])
             csvfile.close()
             print("Zarejestrowałeś nowy pokój")
             self.isroomcreated = True
@@ -275,3 +249,26 @@ class UserManager(SessionManager):
                         break
                     else:
                         print("nieudane dodanie usera do pokoju")
+
+    def options(self):
+        while self.islogged:
+            print("Witamy w programie logowania\n")
+            print(
+                "Wybierz opcję menu lista: 1/szukaj: 2/usun: 3/utwórz pokój: 4/pokaż pokoje: 5/dodaj usera do pokoju: 6/usuń userów z pokoju: 7 /zakoncz: 8\n")
+            menu = int(input("podaj wybór: "))
+            if menu == 1:
+                self.showAllUsers()
+            elif menu == 2:
+                self.findUserByName()
+            elif menu == 3:
+                self.deleteEntry()
+            elif menu == 4:
+                self.createNewRoom()
+            elif menu == 5:
+                self.showAllUserRooms()
+            elif menu == 6:
+                self.addUserToRoom()
+            elif menu == 7:
+                self.removeUsersFromRoom()
+            else:
+                exit()
