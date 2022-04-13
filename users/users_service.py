@@ -167,20 +167,23 @@ class UserManager(SessionManager):
         MetaData.reflect(meta)
         usertobeadded = input("Podaj name usera do dodania: ")
         roomtobeused = input("Podaj id pokoju do dodania użytkownika: ")
-        self.roomPasswordValidate()
-        Session = sessionmaker(bind=UserManager.engine)
-        session = Session()
-        user = session.query(session.query(User).filter_by(name=usertobeadded).exists()).scalar()
-        q = session.query(User.name).filter(User.name == usertobeadded).one_or_none()
-        if user:
-            result = q[0]
-            print(result)
-            USERS = meta.tables['users']
-            stmt = USERS.update().where(USERS.c.name == usertobeadded).values(room=roomtobeused)
-            engine.execute(stmt)
-            print("User dodany do pokoju")
+        if self.roomPasswordValidate():
+            Session = sessionmaker(bind=UserManager.engine)
+            session = Session()
+            user = session.query(session.query(User).filter_by(name=usertobeadded).exists()).scalar()
+            q = session.query(User.name).filter(User.name == usertobeadded).one_or_none()
+            if user:
+                result = q[0]
+                print(result)
+                USERS = meta.tables['users']
+                stmt = USERS.update().where(USERS.c.name == usertobeadded).values(room=roomtobeused)
+                engine.execute(stmt)
+                print("User dodany do pokoju")
+            else:
+                print("nie znaleziono pokoju lub użytkownika")
         else:
-            print("nie znaleziono pokoju lub użytkownika")
+            print("Niepoprawne hasło")
+            self.options()
 
     def removeUsersFromRoom(self):
         meta = MetaData(bind=engine)
@@ -232,20 +235,22 @@ class UserManager(SessionManager):
                 reader = csv.reader(csvfile)
                 for row in reader:
                     userdata.append(row)
-            name = input('Podaj swój login: ')
+            roomid = input('Podaj id pokoju: ')
             password = getpass.getpass('Podaj hasło do pokoju ')
-            passwordencoded = password.encode('utf-8')
-            col3 = [x[3] for x in userdata]
+            roompasswordencoded = password.encode('utf-8')
+            col0 = [x[0] for x in userdata]
             col1 = [x[1] for x in userdata]
-            print(userdata)
-            if name in col3:
-                for k in range(0, len(col1)):
-                    if col3[k] == name and col1[k] == password:
-                        print("Zalogowałeś się ")
-                        self.isloggedtoroom = True
-                        break
-                    else:
-                        print("nieudane dodanie usera do pokoju")
+            # if name in col3:
+            for k in range(0, len(col1)):
+                if col0[k] == roomid and col1[k] == password:
+                # if col0[k] == roomid and bcrypt.checkpw(roompasswordencoded, col1[k]):
+                    print("Zalogowałeś się ")
+                    self.isloggedtoroom = True
+                    break
+                else:
+                    print("nieudane dodanie usera do pokoju")
+                    break
+            self.options()
 
     def options(self):
         while self.islogged:
