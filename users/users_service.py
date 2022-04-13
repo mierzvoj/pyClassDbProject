@@ -241,9 +241,9 @@ class UserManager(SessionManager):
             col0 = [x[0] for x in userdata]
             col1 = [x[1] for x in userdata]
             # if name in col3:
-            for k in range(0, len(col1)):
-                if col0[k] == roomid and col1[k] == password:
-                # if col0[k] == roomid and bcrypt.checkpw(roompasswordencoded, col1[k]):
+            for k in range(0, len(col0)):
+                if roomid in col0 and password in col1:
+                # if roomid in col0 and bcrypt.checkpw(roompasswordencoded, col1):
                     print("Zalogowałeś się ")
                     self.isloggedtoroom = True
                     break
